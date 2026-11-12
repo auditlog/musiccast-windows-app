@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from musiccast_bridge import __version__
-from musiccast_bridge.versioning import version_tuple
+from musiccast_bridge.versioning import DEFAULT_UPDATE_REPOSITORY, version_tuple
 
 ROOT = Path(__file__).resolve().parents[1]
 tools = runpy.run_path(str(ROOT / "scripts/version_info.py"))
@@ -62,3 +62,27 @@ class VersionResourceTests(unittest.TestCase):
         spec = (ROOT / "MusicCastBridge.spec").read_text()
         self.assertIn("version=str(version_file)", spec)
         self.assertIn('["verify_exe_version"]', spec)
+
+    def test_build_without_git_uses_official_default_and_preserves_fork_origin(self):
+        with tempfile.TemporaryDirectory() as temp:
+            project = Path(temp)
+            source = project / "src/musiccast_bridge"
+            source.mkdir(parents=True)
+            (source / "versioning.py").write_bytes(
+                (ROOT / "src/musiccast_bridge/versioning.py").read_bytes()
+            )
+            (source / "__init__.py").write_text(f'__version__ = "{__version__}"\n')
+            (project / "pyproject.toml").write_text('[project]\ndynamic=["version"]\n')
+            with (
+                patch.dict("os.environ", {"MUSICCAST_RELEASE_REPOSITORY": ""}),
+                patch("subprocess.run", side_effect=FileNotFoundError),
+            ):
+                _, metadata = tools["prepare_version_info"](project)
+                self.assertEqual(json.loads(metadata.read_text())["repository"],
+                                 DEFAULT_UPDATE_REPOSITORY)
+                (project / ".git").mkdir()
+                (project / ".git/config").write_text(
+                    '[remote "origin"]\nurl = git@github.com:owner/fork.git\n'
+                )
+                _, metadata = tools["prepare_version_info"](project)
+                self.assertEqual(json.loads(metadata.read_text())["repository"], "owner/fork")

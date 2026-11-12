@@ -1,5 +1,33 @@
 # Weryfikacja MusicCast Bridge
 
+## Domyślne repozytorium aktualizacji 0.2.2 — 12 listopada 2026
+
+- Wbudowany adres to `auditlog/musiccast-windows-app`. Własne ustawienie
+  użytkownika ma pierwszeństwo, potem repozytorium z metadanych buildu,
+  a na końcu wbudowany adres. UI i sprawdzanie aktualizacji korzystają
+  z tego samego resolvera, bez uruchamiania Gita podczas działania aplikacji.
+- Build zachowuje kolejność: zmienna MUSICCAST_RELEASE_REPOSITORY, origin,
+  domyślny adres projektu. Fork z własnym origin nadal może używać swoich wydań.
+  Puste, brakujące, uszkodzone i zawierające obcy host metadane EXE nie usuwają
+  wbudowanego adresu.
+- `python3 scripts/check.py --sandbox`: **143 testy, 122 zaliczone,
+  21 pominiętych** (20 Qt, jeden natywny Core Audio). Ruff przeszedł.
+  Testy obejmują faktyczny URL żądania przy pustych ustawieniach, nadpisanie
+  repozytorium, brak uruchamiania Gita, walidację metadanych i build bez Gita.
+  Istniejące testy odrzucania obcych URL-i, braku poświadczeń i porównywania
+  wersji nadal przechodzą. Dodano kontrolę widocznego domyślnego URL-a w Qt;
+  ten test jest tutaj pominięty wraz z pozostałymi testami interfejsu.
+- Wybór domyślnego oficjalnego repozytorium zamiast odczytywania origin podczas
+  działania aplikacji wsparto decyzją JEV. Wymóg działającego adresu domyślnego
+  podał użytkownik; zgodność wyświetlanego adresu ze sprawdzanym, brak blokowania
+  ustawień procesem Git oraz zachowanie override'ów i forków były priorytetami
+  przyjętymi podczas implementacji. Wynik nie zastępował testów.
+
+Nie przebudowano EXE ani instalatora 0.2.2 w tym środowisku. Wersja 0.2.0 może
+korzystać z tego samego repozytorium po ręcznym wpisaniu jego URL-a w ustawieniach.
+Rozpoznanie nowej wersji wymaga publicznego stabilnego GitHub Release;
+sam commit, push lub tag nie wystarczą.
+
 ## Język aplikacji i instalatora 0.2.1 — 12 listopada 2026
 
 - `python3 scripts/check.py --sandbox`: **141 testów, 120 zaliczonych,

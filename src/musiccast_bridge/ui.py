@@ -51,7 +51,7 @@ from .receiver import PLAYBACK_BITS, validate_host
 from .settings import Settings
 from .telemetry import TrafficMonitor, traffic_text
 from .updates import UpdateInfo, check_for_updates, update_text
-from .versioning import bundled_repository, github_repository
+from .versioning import default_update_repository, github_repository
 from .worker import Worker
 
 STYLE = """
@@ -487,16 +487,14 @@ class SettingsDialog(QDialog):
         updates.addWidget(label(tr("Repozytorium GitHub")))
         self.repository = QLineEdit(parent.settings.update_repository)
         self.repository.setAccessibleName(tr("Repozytorium GitHub"))
-        self.repository.setPlaceholderText(tr("Automatycznie z repozytorium projektu"))
+        configured = default_update_repository()
+        self.repository.setPlaceholderText(f"https://github.com/{configured}")
         updates.addWidget(self.repository)
-        configured = bundled_repository()
         updates.addWidget(label(
-            tr("Build odczytuje adres z remote.origin.url. Puste pole używa adresu "
-               "zapisanego przy budowaniu. Możesz wpisać owner/repo lub pełny link GitHuba."),
+            tr("Puste pole używa domyślnego adresu widocznego powyżej. "
+               "Możesz wpisać inne repozytorium jako owner/repo lub pełny link GitHuba."),
             "hint", wrap=True,
         ))
-        if configured:
-            updates.addWidget(label(f"GitHub: {configured}", "hint", wrap=True))
         updates.addWidget(label(
             tr("Sprawdzanie łączy się z api.github.com. Wysyła adres IP i wersję aplikacji "
                "w nagłówku zapytania. Nowe wydanie pobierasz i instalujesz z jego strony. "

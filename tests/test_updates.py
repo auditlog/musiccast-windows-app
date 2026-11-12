@@ -8,7 +8,13 @@ from unittest.mock import Mock, patch
 
 from musiccast_bridge import __version__
 from musiccast_bridge.updates import check_for_updates, release_info
-from musiccast_bridge.versioning import github_repository, origin_repository, project_version
+from musiccast_bridge.versioning import (
+    DEFAULT_UPDATE_REPOSITORY,
+    default_update_repository,
+    github_repository,
+    origin_repository,
+    project_version,
+)
 
 
 class UpdateTests(unittest.TestCase):
@@ -65,7 +71,11 @@ class UpdateTests(unittest.TestCase):
     def test_check_is_bounded_read_only_and_sends_no_credentials(self):
         response = io.BytesIO(json.dumps({"tag_name": "v0.3.0"}).encode())
         opener = Mock(open=Mock(return_value=response))
-        with patch("musiccast_bridge.updates.urllib.request.build_opener", return_value=opener):
+        with (
+            patch("musiccast_bridge.updates.urllib.request.build_opener", return_value=opener),
+            patch("musiccast_bridge.updates.default_update_repository",
+                  side_effect=AssertionError("Explicit repository must override the default")),
+        ):
             result = check_for_updates("owner/repo", "0.2.0")
         self.assertEqual(result.state, "available")
         request = opener.open.call_args.args[0]
@@ -101,14 +111,47 @@ class UpdateTests(unittest.TestCase):
         with patch("musiccast_bridge.updates.urllib.request.build_opener", return_value=opener):
             self.assertEqual(check_for_updates("owner/repo").state, "invalid_response")
 
-    def test_unconfigured_origin_does_not_make_network_requests(self):
+    def test_empty_setting_uses_official_or_bundled_repository_without_git(self):
+        for bundled, expected in (("", DEFAULT_UPDATE_REPOSITORY), ("owner/fork", "owner/fork")):
+            response = io.BytesIO(json.dumps({"tag_name": "v0.3.0"}).encode())
+            opener = Mock(open=Mock(return_value=response))
+            with (
+                patch("musiccast_bridge.versioning.bundled_repository", return_value=bundled),
+                patch("musiccast_bridge.versioning.subprocess.run",
+                      side_effect=AssertionError("Runtime update check must not spawn Git")),
+                patch("musiccast_bridge.updates.urllib.request.build_opener", return_value=opener),
+            ):
+                result = check_for_updates("", "0.2.0")
+            self.assertEqual(result.state, "available")
+            self.assertEqual(result.repository, expected)
+            self.assertEqual(opener.open.call_args.args[0].full_url,
+                             f"https://api.github.com/repos/{expected}/releases/latest")
+
+    def test_default_is_available_from_source_and_invalid_or_missing_frozen_metadata(self):
         with (
-            patch("musiccast_bridge.updates.bundled_repository", return_value=""),
-            patch("musiccast_bridge.updates.origin_repository", return_value=""),
-            patch("musiccast_bridge.updates.urllib.request.build_opener") as build,
+            patch("musiccast_bridge.versioning.sys.frozen", False, create=True),
+            patch("musiccast_bridge.versioning.subprocess.run",
+                  side_effect=AssertionError("Settings must not spawn Git")),
         ):
-            self.assertEqual(check_for_updates().state, "unconfigured")
-            build.assert_not_called()
+            self.assertEqual(default_update_repository(), DEFAULT_UPDATE_REPOSITORY)
+        with tempfile.TemporaryDirectory() as temp:
+            folder = Path(temp)
+            metadata = folder / "build-info.json"
+            with (
+                patch("musiccast_bridge.versioning.sys.frozen", True, create=True),
+                patch("musiccast_bridge.versioning.__file__", str(folder / "versioning.py")),
+            ):
+                self.assertEqual(default_update_repository(), DEFAULT_UPDATE_REPOSITORY)
+                for value, expected in (
+                    ("https://github.com/owner/fork", "owner/fork"),
+                    ("", DEFAULT_UPDATE_REPOSITORY),
+                    (None, DEFAULT_UPDATE_REPOSITORY),
+                    ("https://evil.example/owner/repo", DEFAULT_UPDATE_REPOSITORY),
+                ):
+                    metadata.write_text(json.dumps({"repository": value}))
+                    self.assertEqual(default_update_repository(), expected)
+                metadata.write_text("invalid JSON")
+                self.assertEqual(default_update_repository(), DEFAULT_UPDATE_REPOSITORY)
 
     def test_git_origin_can_be_read_without_git_executable(self):
         with tempfile.TemporaryDirectory() as temp:

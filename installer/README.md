@@ -15,7 +15,7 @@ PyInstaller, używa `build\VBCABLE_Driver_Pack46.zip` albo pobiera tę paczkę z
 sprawdza strukturę archiwum i kompiluje Inno Setup. Wynik dla bieżącej wersji:
 
 ```text
-dist\installer\MusicCastBridge-0.2.1-Setup-x64.exe
+dist\installer\MusicCastBridge-0.2.2-Setup-x64.exe
 ```
 
 Wersja pochodzi z `__version__` w `src/musiccast_bridge/__init__.py`.
@@ -28,6 +28,10 @@ Build odczytuje `remote.origin.url` i dołącza adres GitHuba do aplikacji.
 Bez Gita na PATH odczytuje zwykły `.git/config`. Możesz wskazać inne repozytorium
 wydań przez `MUSICCAST_RELEASE_REPOSITORY=auditlog/musiccast-windows-app`
 lub ustawienia aplikacji.
+Od 0.2.2 brak konfiguracji Git i zmiennej środowiskowej oznacza użycie
+wbudowanego `auditlog/musiccast-windows-app`. Własny wybór w ustawieniach ma
+pierwszeństwo. To samo repozytorium jest domyślne przy uruchamianiu ze źródeł;
+aplikacja nie uruchamia Gita podczas sprawdzania aktualizacji.
 Sprawdzanie korzysta z publicznych GitHub Releases; publikacja samego commita,
 pushu lub tagu nie udostępnia nowej wersji updaterowi.
 
@@ -127,8 +131,9 @@ Nie uruchamiano instalatora w ramach tej kontroli.
 
 Build zawiera poprawkę IID `IMMDeviceCollection`, wersjonowanie EXE i obsługę
 sprawdzania GitHub Releases. Test natywny pozostaje włączony w pełnym procesie
-budowania. Poprawki językowe 0.2.1 wymagają nowego buildu; istniejące pliki 0.2.0
-ich nie zawierają. [Pełny zakres weryfikacji](../docs/VALIDATION.md).
+budowania. Poprawki językowe i domyślne repozytorium aktualizacji wymagają nowego
+buildu 0.2.2; istniejące pliki 0.2.0 ich nie zawierają.
+[Pełny zakres weryfikacji](../docs/VALIDATION.md).
 
 W `build-info.json` gotowej aplikacji pole repozytorium jest puste. Sprawdzanie
 aktualizacji wymaga wpisania adresu w ustawieniach albo zbudowania pakietu

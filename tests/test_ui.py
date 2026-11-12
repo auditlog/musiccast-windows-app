@@ -126,6 +126,8 @@ class WindowTests(unittest.TestCase):
     def test_update_preferences_are_saved_without_network_or_audio(self):
         self.window._show_updates()
         dialog = self.window._settings_window
+        self.assertEqual(dialog.repository.placeholderText(),
+                         "https://github.com/auditlog/musiccast-windows-app")
         dialog.repository.setText("https://github.com/owner/musiccast.git")
         dialog.check_updates.setChecked(True)
         with patch("musiccast_bridge.ui.check_for_updates") as check:

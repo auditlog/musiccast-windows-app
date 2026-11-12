@@ -4,12 +4,11 @@ import json
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
-from pathlib import Path
 from urllib.parse import quote
 
 from . import __version__
 from .i18n import tr
-from .versioning import bundled_repository, github_repository, origin_repository, version_tuple
+from .versioning import default_update_repository, github_repository, version_tuple
 
 _LIMIT = 1_048_576
 
@@ -33,7 +32,7 @@ def check_for_updates(repository="", current=__version__):
         repository = (
             github_repository(repository)
             if repository.strip()
-            else (bundled_repository() or origin_repository(Path(__file__).resolve().parents[2]))
+            else default_update_repository()
         )
     except ValueError:
         return UpdateInfo("invalid_repository")

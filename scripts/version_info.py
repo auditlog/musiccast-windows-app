@@ -15,7 +15,7 @@ def prepare_version_info(project):
     repository = (
         functions["github_repository"](explicit)
         if explicit
-        else functions["origin_repository"](project)
+        else (functions["origin_repository"](project) or functions["DEFAULT_UPDATE_REPOSITORY"])
     )
     folder = project / "build" / "version"
     folder.mkdir(parents=True, exist_ok=True)

@@ -291,5 +291,6 @@
   "Yamaha nie odpowiedziała na czas. Sprawdź połączenie i ponów próbę.": "Yamaha did not respond in time. Check the connection and try again.",
   "Nie udało się przesłać dźwięku. Sprawdź raport w oknie Diagnostyka.": "Audio streaming failed. Check the report in Diagnostics.",
   "Podaj --host albo --demo": "Provide --host or --demo",
-  "Wyszukaj amplitunery w sieci": "Find receivers on the network"
+  "Wyszukaj amplitunery w sieci": "Find receivers on the network",
+  "Puste pole używa domyślnego adresu widocznego powyżej. Możesz wpisać inne repozytorium jako owner/repo lub pełny link GitHuba.": "Leave this field empty to use the default address shown above, or enter another repository as owner/repo or a GitHub URL."
 }

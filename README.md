@@ -20,9 +20,10 @@ Dla projektu w `C:\code\musiccast` pełna ścieżka to
 Plik ma około 40 MB. Sprawdzono, że aplikacja i instalator mają w metadanych
 Windows **FileVersion 0.2.0.0** i **ProductVersion 0.2.0.0**.
 
-Bieżące źródła mają wersję **0.2.1** i zawierają poprawki językowe opisane poniżej.
+Bieżące źródła mają wersję **0.2.2** i zawierają poprawki językowe oraz
+wbudowany adres aktualizacji opisane poniżej.
 Aby otrzymać je w instalatorze, uruchom ponownie `build-installer-windows.cmd`.
-Nowy plik będzie miał nazwę `dist\installer\MusicCastBridge-0.2.1-Setup-x64.exe`;
+Nowy plik będzie miał nazwę `dist\installer\MusicCastBridge-0.2.2-Setup-x64.exe`;
 istniejący instalator 0.2.0 nie aktualizuje się po edycji źródeł.
 
 1. Uruchom instalator i wybierz **Polski** albo **English** w pierwszym oknie.
@@ -132,7 +133,7 @@ Numer wersji ma jedno źródło: `__version__` w
 Pakiet Pythona, EXE i instalator korzystają z tej wartości. Build zapisuje
 Windows **FileVersion** i **ProductVersion**, po czym odczytuje je z gotowego
 EXE i porównuje z zadeklarowaną wersją. Wersja jest też w tytule okna i w
-ustawieniach. Obecna wersja źródeł to **0.2.1**.
+ustawieniach. Obecna wersja źródeł to **0.2.2**.
 
 Przy starcie program domyślnie sprawdza najnowsze stabilne **GitHub Release**,
 w tle i bez przerywania audio. Dostępna aktualizacja zmienia przycisk na
@@ -140,18 +141,24 @@ w tle i bez przerywania audio. Dostępna aktualizacja zmienia przycisk na
 instalator i zainstalować go po zakończeniu aplikacji przez Ctrl+Q. Sprawdzanie
 można wyłączyć. Brak internetu lub limit GitHuba jest pokazywany w tej zakładce.
 
-Adres GitHuba jest pobierany z `remote.origin.url` podczas buildu i zapisywany
-w pakiecie aplikacji. Bez `git.exe` na Windows build odczyta zwykły `.git/config`.
-Instalacja na innym komputerze nie wymaga Gita. Własny adres można wskazać w
-ustawieniach albo podczas buildu zmienną
-`MUSICCAST_RELEASE_REPOSITORY=auditlog/musiccast-windows-app`.
-To przydatne także dla osobnego publicznego repozytorium wydań.
+Od **0.2.2** aplikacja ma wbudowane domyślne repozytorium
+**`auditlog/musiccast-windows-app`**. Działa ono również przy uruchamianiu
+ze źródeł i budowaniu z ZIP-a bez metadanych Git. W ustawieniach puste pole
+pokazuje domyślny URL i korzysta z niego bez potrzeby ręcznego wpisywania.
 
-W sprawdzonym buildzie 0.2.0 pole repozytorium pozostało puste. Aby uruchomić
-sprawdzanie aktualizacji w tym pakiecie, podaj adres w **Ustawienia →
-Aktualizacje → Repozytorium GitHub**. Przy następnych buildach skonfiguruj origin
-lub zmienną `MUSICCAST_RELEASE_REPOSITORY`; bez wskazanego adresu aplikacja
-nie wysyła zapytania do GitHuba.
+Podczas buildu można wskazać inne repozytorium zmienną
+`MUSICCAST_RELEASE_REPOSITORY=auditlog/musiccast-windows-app`.
+Bez tej zmiennej build sprawdza `remote.origin.url`, a gdy go nie ma, używa
+wbudowanego adresu. Bez `git.exe` na Windows odczyta zwykły `.git/config`.
+Repozytorium zapisane w buildzie ma pierwszeństwo przed wbudowanym adresem;
+własny adres wpisany w ustawieniach ma pierwszeństwo przed oboma. To pozwala
+korzystać z forków i osobnych publicznych repozytoriów wydań. Uruchomienie
+aplikacji i sprawdzenie aktualizacji nie wymagają Gita.
+
+W **0.2.0** wpisz ręcznie w **Ustawienia → Aktualizacje → Repozytorium GitHub**:
+**`https://github.com/auditlog/musiccast-windows-app`**, kliknij **Zapisz**, a potem
+**Sprawdź teraz**. Możesz też podać samo `auditlog/musiccast-windows-app`.
+Wskazujesz adres repozytorium; aplikacja sama tworzy adres zapytania API.
 
 Sprawdzanie bez logowania wymaga publicznych wydań. Sam commit, push ani tag
 nie zastępują publikacji GitHub Release. Aby udostępnić nową wersję:

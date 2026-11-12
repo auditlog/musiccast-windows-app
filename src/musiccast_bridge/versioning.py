@@ -13,6 +13,8 @@ import tomllib
 from pathlib import Path
 from urllib.parse import urlsplit
 
+DEFAULT_UPDATE_REPOSITORY = "auditlog/musiccast-windows-app"
+
 
 def version_tuple(value, tag=False):
     if not isinstance(value, str):
@@ -113,3 +115,8 @@ def bundled_repository():
         return github_repository(data["repository"])
     except (OSError, ValueError, KeyError, TypeError):
         return ""
+
+
+def default_update_repository():
+    """Resolve the app default without requiring Git on the user's computer."""
+    return bundled_repository() or DEFAULT_UPDATE_REPOSITORY
