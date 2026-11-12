@@ -1,0 +1,22 @@
+VB-CABLE — optional component
+
+VB-CABLE is an optional, separate VB-Audio Software product, not covered by
+MusicCast Bridge's MIT license. Origin: https://www.vb-cable.com/
+It is donationware: if useful, support its authors by donating or purchasing
+a license at https://vb-audio.com/Services/licensing.htm
+Professional use/deployments are subject to the vendor's licensing terms.
+
+This installer includes the standard VB-CABLE package unchanged. Additional
+cables A+B and C+D are not included. Installing a missing driver needs
+administrator permission and a restart; an existing shared driver is kept.
+Uninstalling MusicCast Bridge leaves VB-CABLE and your application data.
+
+Choose CABLE Input as your browser/Spotify output in the Windows mixer, or
+enable automatic Windows output switching in MusicCast Bridge Settings.
+Applications with individual mixer assignments may still need to be set to
+Default or CABLE Input. Set cable/player volume to 100% and adjust listening
+volume on Yamaha. Driver installation may change Windows defaults; check them
+after restarting.
+
+Windows system dialogs and the original VB-CABLE installer use the system
+or vendor language.

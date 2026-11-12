@@ -1,0 +1,26 @@
+VB-CABLE — składnik opcjonalny
+
+VB-CABLE jest produktem VB-Audio Software.
+Źródło produktu: https://www.vb-cable.com/
+Strona producenta: https://vb-audio.com/Cable/
+
+VB-CABLE jest udostępniany w modelu donationware. Jeśli jest przydatny,
+możesz wesprzeć jego autorów darowizną lub zakupem licencji:
+https://vb-audio.com/Services/licensing.htm
+
+Instalator zawiera standardowy pakiet VB-CABLE bez zmian w plikach producenta.
+Paczki dodatkowych kabli A+B oraz C+D nie są dołączane.
+W zastosowaniach profesjonalnych obowiązują warunki licencyjne producenta.
+
+Instalacja sterownika wymaga uprawnień administratora i może wymagać restartu.
+Instalator pomija wykryty sterownik. Odinstalowanie MusicCast Bridge pozostawia
+VB-CABLE, ustawienia użytkownika i poświadczenia AirPlay.
+
+Po instalacji wybierz CABLE Input jako wyjście przeglądarki/Spotify w mikserze
+Windows. Nasz instalator nie zmienia domyślnego mikrofonu ani wyjścia aplikacji;
+Windows może jednak wybrać nowo dodane urządzenie jako domyślne. Sprawdź je po
+instalacji sterownika. Dalsze kroki znajdziesz w aplikacji pod „Tylko Yamaha…”.
+
+Automatyczne przełączanie wyjścia Windows możesz włączyć w ustawieniach aplikacji.
+Okna samego Windows i oryginalnego instalatora VB-CABLE używają języka systemu
+lub producenta.

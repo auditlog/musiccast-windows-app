@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "musiccast-bridge"
+dynamic = ["version"]
+description = "Windows audio sender and local Yamaha MusicCast remote"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.12,<3.14"
+dependencies = [
+  "PySide6-Essentials==6.8.3",
+  "pyatv==0.18.0",
+  "PyAudioWPatch>=0.2.12.7,<0.3; sys_platform == 'win32'",
+]
+
+[project.optional-dependencies]
+build = ["pyinstaller>=6.11,<7"]
+
+[project.gui-scripts]
+musiccast-bridge = "musiccast_bridge.app:main"
+
+[project.scripts]
+musiccast-cli = "musiccast_bridge.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.dynamic]
+version = {attr = "musiccast_bridge.__version__"}
+
+[tool.setuptools.package-data]
+musiccast_bridge = ["en.json", "windows_output.ps1", "legal_texts/pl/*", "legal_texts/en/*"]
+
+[tool.setuptools.data-files]
+"share/musiccast-bridge" = ["LICENSE", "TERMS.md", "PRIVACY.md", "THIRD_PARTY_NOTICES.md"]
+"share/musiccast-bridge/licenses" = ["licenses/*.txt", "licenses/README.md"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC"]

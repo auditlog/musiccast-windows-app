@@ -1,0 +1,27 @@
+Licencja MIT — tłumaczenie informacyjne
+
+Poniżej znajduje się polskie tłumaczenie informacyjne. Tekstem referencyjnym
+jest angielski oryginał MIT, dostępny w aplikacji jako „MIT — oryginał angielski”
+oraz w pliku LICENSE dołączonym do pakietu. Tłumaczenie nie zmienia jego warunków.
+
+Prawa autorskie (c) 2026 — współtwórcy MusicCast Bridge
+
+Niniejszym udziela się bezpłatnie każdej osobie, która otrzyma kopię niniejszego
+oprogramowania i powiązanych plików dokumentacji („Oprogramowanie”), zezwolenia
+na korzystanie z Oprogramowania bez ograniczeń, w tym na jego używanie,
+kopiowanie, modyfikowanie, łączenie, publikowanie, rozpowszechnianie,
+sublicencjonowanie i sprzedaż kopii Oprogramowania, a także na udzielanie
+takiego zezwolenia osobom, którym Oprogramowanie jest dostarczane,
+z zastrzeżeniem następujących warunków:
+
+Powyższa informacja o prawach autorskich oraz niniejsza informacja o zezwoleniu
+muszą zostać dołączone do wszystkich kopii lub istotnych części Oprogramowania.
+
+OPROGRAMOWANIE JEST DOSTARCZANE „TAK JAK JEST”, BEZ JAKICHKOLWIEK GWARANCJI,
+WYRAŹNYCH LUB DOROZUMIANYCH, W TYM GWARANCJI PRZYDATNOŚCI HANDLOWEJ,
+PRZYDATNOŚCI DO OKREŚLONEGO CELU ORAZ NIENARUSZANIA PRAW. W ŻADNYM WYPADKU
+AUTORZY ANI POSIADACZE PRAW AUTORSKICH NIE PONOSZĄ ODPOWIEDZIALNOŚCI ZA
+JAKIEKOLWIEK ROSZCZENIA, SZKODY LUB INNE ZOBOWIĄZANIA, CZY TO WYNIKAJĄCE
+Z UMOWY, CZYNU NIEDOZWOLONEGO LUB INNEJ PODSTAWY, POWSTAŁE W ZWIĄZKU
+Z OPROGRAMOWANIEM LUB KORZYSTANIEM Z NIEGO BĄDŹ INNYMI CZYNNOŚCIAMI
+DOTYCZĄCYMI OPROGRAMOWANIA.
