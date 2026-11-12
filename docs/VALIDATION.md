@@ -1,5 +1,20 @@
 # Weryfikacja MusicCast Bridge
 
+## Gotowy build Windows 0.2.2 — 12 listopada 2026
+
+- Instalator `dist/installer/MusicCastBridge-0.2.2-Setup-x64.exe` istnieje
+  i ma **39 953 828 bajtów**. Aplikacja `dist/MusicCastBridge/MusicCastBridge.exe`
+  ma 7 873 661 bajtów.
+- Odczyt zasobów PE obu plików potwierdził **FileVersion 0.2.2.0** oraz
+  **ProductVersion 0.2.2.0**. Sprawdzono pliki bez ich uruchamiania.
+- W `dist/MusicCastBridge/_internal/musiccast_bridge/build-info.json`
+  i `build/version/build-info.json` potwierdzono wersję `0.2.2` oraz
+  repozytorium `auditlog/musiccast-windows-app`. Pakiet zawiera już domyślny
+  adres aktualizacji; ręczne ustawienie pozostaje potrzebne w starym 0.2.0.
+- Ta kontrola potwierdza obecność plików i ich metadane. Nie obejmuje wykonania
+  instalatora, renderowania interfejsu ani rzeczywistej odpowiedzi updatera.
+  Natywne próby opisano w [instrukcji instalatora](../installer/README.md).
+
 ## Domyślne repozytorium aktualizacji 0.2.2 — 12 listopada 2026
 
 - Wbudowany adres to `auditlog/musiccast-windows-app`. Własne ustawienie
@@ -23,7 +38,8 @@
   ustawień procesem Git oraz zachowanie override'ów i forków były priorytetami
   przyjętymi podczas implementacji. Wynik nie zastępował testów.
 
-Nie przebudowano EXE ani instalatora 0.2.2 w tym środowisku. Wersja 0.2.0 może
+Na etapie zmiany źródeł nie przebudowano EXE ani instalatora 0.2.2. Później
+sprawdzono gotowy build opisany powyżej. Wersja 0.2.0 może
 korzystać z tego samego repozytorium po ręcznym wpisaniu jego URL-a w ustawieniach.
 Rozpoznanie nowej wersji wymaga publicznego stabilnego GitHub Release;
 sam commit, push lub tag nie wystarczą.

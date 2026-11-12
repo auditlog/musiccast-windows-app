@@ -123,21 +123,24 @@ oraz plików aplikacji. Obowiązują [warunki dystrybucji producenta](https://vb
 
 ## Stan weryfikacji
 
-12 listopada 2026 użytkownik potwierdził udany natywny build **0.2.0**.
-Sprawdzono pliki `dist\installer\MusicCastBridge-0.2.0-Setup-x64.exe`
-(39 904 089 bajtów) oraz `dist\MusicCastBridge\MusicCastBridge.exe`.
-Oba pliki mają w zasobach PE **FileVersion 0.2.0.0** i **ProductVersion 0.2.0.0**.
+12 listopada 2026 sprawdzono gotowy lokalny build **0.2.2**:
+`dist\installer\MusicCastBridge-0.2.2-Setup-x64.exe` (39 953 828 bajtów)
+oraz `dist\MusicCastBridge\MusicCastBridge.exe`.
+Oba pliki mają w zasobach PE **FileVersion 0.2.2.0** i **ProductVersion 0.2.2.0**.
 Nie uruchamiano instalatora w ramach tej kontroli.
 
 Build zawiera poprawkę IID `IMMDeviceCollection`, wersjonowanie EXE i obsługę
 sprawdzania GitHub Releases. Test natywny pozostaje włączony w pełnym procesie
-budowania. Poprawki językowe i domyślne repozytorium aktualizacji wymagają nowego
-buildu 0.2.2; istniejące pliki 0.2.0 ich nie zawierają.
+budowania. Build 0.2.2 zawiera też poprawki językowe i domyślne repozytorium
+aktualizacji. Ostatni lokalny przebieg testów logiki: 122 zaliczone,
+21 pominiętych z powodu braku Windows/Qt.
 [Pełny zakres weryfikacji](../docs/VALIDATION.md).
 
-W `build-info.json` gotowej aplikacji pole repozytorium jest puste. Sprawdzanie
-aktualizacji wymaga wpisania adresu w ustawieniach albo zbudowania pakietu
-z poprawnym origin lub `MUSICCAST_RELEASE_REPOSITORY`.
+W `build-info.json` gotowej aplikacji potwierdzono wersję `0.2.2` i repozytorium
+`auditlog/musiccast-windows-app`. W tym pakiecie pole repozytorium w ustawieniach
+może pozostać puste. Użytkownicy 0.2.0 powinni wpisać ręcznie
+`https://github.com/auditlog/musiccast-windows-app`. Wykrycie nowej wersji wymaga
+opublikowania stabilnego GitHub Release z wyższym numerem.
 
 Testy Qt na Windows korzystają domyślnie z backendu `windows` i czcionki
 Segoe UI 10, zgodnie z aplikacją. Jawne ustawienie `QT_QPA_PLATFORM` nadal ma
@@ -159,6 +162,6 @@ jeszcze tych scenariuszy.
 Weryfikacja na Windows powinna objąć obydwa języki, zapisywanie ustawień, start
 na CABLE Input, zatrzymanie, wyjście przez Ctrl+Q, ręczną zmianę wyjścia w trakcie
 przesyłania, odłączenie poprzedniego urządzenia i odzyskanie trasy po awarii.
-Dla 0.2.1 sprawdź wybór PL i EN w pierwszym oknie, jednolity język dokumentów
+Od wersji 0.2.1 sprawdź wybór PL i EN w pierwszym oknie, jednolity język dokumentów
 instalatora i aplikacji, język okna pliku oraz zmianę języka przez reinstalację
 i późniejszą zmianę w ustawieniach. Pozostałe preferencje powinny zostać zachowane.

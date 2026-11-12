@@ -6,25 +6,26 @@ projektu jest udostępniany na [licencji MIT](LICENSE).
 
 Publiczne repozytorium: [musiccast-windows-app](https://github.com/auditlog/musiccast-windows-app).
 Pliki z katalogów `build` i `dist` nie są częścią repozytorium.
-Instalator nie został jeszcze opublikowany w GitHub Releases.
+Gotowy lokalny build opisano poniżej. Stabilne wydanie do pobrania musi zostać
+oddzielnie opublikowane w [GitHub Releases](https://github.com/auditlog/musiccast-windows-app/releases).
 
 ## Instalator aplikacji
 
-Build wersji **0.2.0** na Windows zakończył się powodzeniem. Gotowy instalator
-znajduje się w katalogu projektu:
+Aktualna wersja źródeł i lokalnego buildu to **0.2.2**. Gotowy instalator
+Windows x64 znajduje się w katalogu projektu:
 
-**`dist\installer\MusicCastBridge-0.2.0-Setup-x64.exe`**.
+**`dist\installer\MusicCastBridge-0.2.2-Setup-x64.exe`**.
 
 Dla projektu w `C:\code\musiccast` pełna ścieżka to
-`C:\code\musiccast\dist\installer\MusicCastBridge-0.2.0-Setup-x64.exe`.
+`C:\code\musiccast\dist\installer\MusicCastBridge-0.2.2-Setup-x64.exe`.
 Plik ma około 40 MB. Sprawdzono, że aplikacja i instalator mają w metadanych
-Windows **FileVersion 0.2.0.0** i **ProductVersion 0.2.0.0**.
+Windows **FileVersion 0.2.2.0** i **ProductVersion 0.2.2.0**, a pakiet zawiera
+adres aktualizacji `auditlog/musiccast-windows-app`.
 
-Bieżące źródła mają wersję **0.2.2** i zawierają poprawki językowe oraz
-wbudowany adres aktualizacji opisane poniżej.
-Aby otrzymać je w instalatorze, uruchom ponownie `build-installer-windows.cmd`.
-Nowy plik będzie miał nazwę `dist\installer\MusicCastBridge-0.2.2-Setup-x64.exe`;
-istniejący instalator 0.2.0 nie aktualizuje się po edycji źródeł.
+Ta wersja zawiera wybór języka PL/EN, dokumenty w wybranym języku i wbudowane
+repozytorium aktualizacji. Po kolejnych zmianach źródeł przebuduj instalator
+poleceniem `build-installer-windows.cmd`. Istniejący EXE nie zmienia się po edycji
+plików projektu.
 
 1. Uruchom instalator i wybierz **Polski** albo **English** w pierwszym oknie.
    Możesz też skopiować sam instalator na inny komputer.
@@ -52,6 +53,15 @@ i uruchom **`build-installer-windows.cmd`**.
 [Instrukcja budowania i zakres weryfikacji](installer/README.md).
 
 ## Uruchomienie ze źródeł w Windows
+
+Pobierz kod przez **Code → Download ZIP** na GitHubie albo sklonuj repozytorium:
+
+```powershell
+git clone https://github.com/auditlog/musiccast-windows-app.git
+cd musiccast-windows-app
+```
+
+W pobranym folderze:
 
 1. Potrzebny jest **Python 3.13 lub 3.12 dla Windows x64**. Jeśli masz już 3.13,
    nie musisz instalować 3.12. Instalator sprawdza najpierw `py -3.13`, potem
@@ -163,10 +173,15 @@ Wskazujesz adres repozytorium; aplikacja sama tworzy adres zapytania API.
 Sprawdzanie bez logowania wymaga publicznych wydań. Sam commit, push ani tag
 nie zastępują publikacji GitHub Release. Aby udostępnić nową wersję:
 
-1. Zmień `__version__`, np. na `0.2.1`, i uruchom `build-installer-windows.cmd`.
-2. Opublikuj GitHub Release z tagiem **v0.2.1** i dołącz wygenerowany instalator.
+1. Uruchom `build-installer-windows.cmd`. Dla bieżącej wersji wynikiem jest
+   `dist\installer\MusicCastBridge-0.2.2-Setup-x64.exe`.
+2. Opublikuj stabilny, publiczny GitHub Release z tagiem **v0.2.2** i dołącz
+   wygenerowany instalator.
 3. Przy publicznej dystrybucji dołącz źródła i informacje wymagane przez LGPL
    zgodnie z [instrukcją wydania](licenses/README.md).
+
+Przy kolejnym wydaniu zwiększ najpierw `__version__`, np. do `0.2.3`.
+Tag wydania, wersja aplikacji i nazwa instalatora powinny mieć ten sam numer.
 
 Kontrola aktualizacji pobiera tylko opis wydania z `api.github.com`. Instalator
 jest pobierany przez użytkownika ze strony wydania. Więcej w [prywatności](PRIVACY.md).
