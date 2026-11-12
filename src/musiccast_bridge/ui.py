@@ -2,6 +2,7 @@
 
 import asyncio
 import sys
+import threading
 from concurrent.futures import InvalidStateError
 from dataclasses import replace
 
@@ -50,7 +51,7 @@ from .models import Snapshot, input_label
 from .receiver import PLAYBACK_BITS, validate_host
 from .settings import Settings
 from .telemetry import TrafficMonitor, traffic_text
-from .updates import UpdateInfo, check_for_updates, update_text
+from .updates import UpdateInfo, check_for_updates, download_update, launch_update, update_text
 from .versioning import default_update_repository, github_repository
 from .worker import Worker
 
@@ -497,13 +498,18 @@ class SettingsDialog(QDialog):
         ))
         updates.addWidget(label(
             tr("Sprawdzanie łączy się z api.github.com. Wysyła adres IP i wersję aplikacji "
-               "w nagłówku zapytania. Nowe wydanie pobierasz i instalujesz z jego strony. "
-               "Sprawdzanie w tle nie przerywa odtwarzania."), "hint", wrap=True,
+               "w nagłówku zapytania. Pobieranie nie przerywa odtwarzania. Instalacja "
+               "zamknie aplikację, przywróci wyjście Windows i otworzy instalator."),
+            "hint", wrap=True,
         ))
         self.update_status = label("", "hint", wrap=True)
         updates.addWidget(self.update_status)
         self.update_check = button(tr("Sprawdź teraz"), self._check_updates)
         updates.addWidget(self.update_check)
+        self.update_install = button(
+            tr("Pobierz aktualizację"), parent._install_update, primary=True,
+        )
+        updates.addWidget(self.update_install)
         self.open_release = button(tr("Otwórz wydanie na GitHubie"), self._open_release)
         updates.addWidget(self.open_release)
         updates.addStretch(1)
@@ -610,6 +616,8 @@ class SettingsDialog(QDialog):
         changed_language = settings.language != parent.settings.language
         if settings.update_repository != parent.settings.update_repository:
             parent.update_info = UpdateInfo()
+            parent._update_path = None
+            parent._update_status = ""
             parent.update_button.setText(tr("Aktualizacje…"))
         parent.settings = settings
         parent._notice(
@@ -628,9 +636,24 @@ class SettingsDialog(QDialog):
             QDesktopServices.openUrl(QUrl(info.release_url))
 
     def refresh_updates(self):
-        info = self.parent().update_info
-        self.update_status.setText(update_text(info))
-        self.update_check.setEnabled("updates" not in self.parent().pending)
+        parent = self.parent()
+        info = parent.update_info
+        busy = bool(parent.pending & {"updates", "download_update", "launch_update"})
+        self.update_status.setText(parent._update_status or update_text(info))
+        self.update_check.setEnabled(not busy)
+        self.update_install.setText(
+            tr("Pobieranie…") if "download_update" in parent.pending else
+            tr("Uruchamianie instalatora…") if "launch_update" in parent.pending else
+            tr("Zainstaluj i zamknij aplikację") if parent._update_path else
+            tr("Pobierz aktualizację")
+        )
+        self.update_install.setEnabled(
+            not busy and sys.platform == "win32" and getattr(sys, "frozen", False)
+            and info.state == "available" and bool(info.installer_url)
+        )
+        self.update_install.setToolTip(tr(
+            "Instalacja wymaga wersji EXE Windows i instalatora z sumą SHA-256 w wydaniu."
+        ))
         self.open_release.setEnabled(info.state == "available" and bool(info.release_url))
 
 
@@ -652,6 +675,10 @@ class MainWindow(QMainWindow):
         self._routing_window: RoutingDialog | None = None
         self._settings_window: SettingsDialog | None = None
         self.update_info = UpdateInfo()
+        self._update_path = None
+        self._download_info = None
+        self._update_status = ""
+        self._update_cancel = threading.Event()
         self._update_repository_at_request = self.settings.update_repository
         self._device_missing = bool(
             self.settings.audio_device_name or self.settings.prefer_virtual_cable
@@ -664,6 +691,7 @@ class MainWindow(QMainWindow):
         self.worker.failed.connect(self._failed)
         self.worker.audio_state.connect(self._audio_state)
         self.worker.airplay_secret.connect(self._show_airplay_prompt)
+        self.worker.update_progress.connect(self._download_progress)
         self._build()
         self._render()
         try:
@@ -1093,7 +1121,8 @@ class MainWindow(QMainWindow):
             self.host.selectAll()
 
     def _poll(self):
-        if self.snapshot and not self.pending and not self.volume.isSliderDown():
+        if (self.snapshot and not self.pending - {"updates", "download_update"}
+                and not self.volume.isSliderDown()):
             self._submit("refresh", self.worker.session.refresh())
 
     def _command(self, method, value):
@@ -1132,6 +1161,9 @@ class MainWindow(QMainWindow):
         self._command("set_input", self.source.itemData(index))
 
     def _devices(self):
+        if "devices" in self.pending:
+            return
+        self._notice(tr("Odczytywanie wyjść Windows…"))
         self._submit("devices", asyncio.to_thread(list_audio_devices))
 
     def _select_audio_device(self, index):
@@ -1224,11 +1256,13 @@ class MainWindow(QMainWindow):
         self._settings_window.tabs.setCurrentWidget(self._settings_window.updates_page)
 
     def _check_updates(self, repository=None):
-        if self._closing or "updates" in self.pending:
+        if self._closing or self.pending & {"updates", "download_update", "launch_update"}:
             return
         repository = self.settings.update_repository if repository is None else repository
         self._update_repository_at_request = self.settings.update_repository
         self.update_info = UpdateInfo("checking")
+        self._update_path = None
+        self._update_status = ""
         self._submit("updates", asyncio.to_thread(check_for_updates, repository))
         if self._settings_window is not None:
             self._settings_window.refresh_updates()
@@ -1237,8 +1271,52 @@ class MainWindow(QMainWindow):
         if self.settings.check_updates_at_startup:
             self._check_updates()
 
+    def _install_update(self):
+        if (self._closing or self.pending & {"updates", "download_update", "launch_update"}
+                or self.update_info.state != "available" or not self.update_info.installer_url
+                or sys.platform != "win32" or not getattr(sys, "frozen", False)):
+            return
+        if self._update_path is not None:
+            self._update_status = tr("Uruchamianie instalatora…")
+            self._submit("launch_update", asyncio.to_thread(
+                launch_update, self._update_path, self._download_info,
+            ))
+        else:
+            self._download_info = self.update_info
+            self._update_cancel.clear()
+            self._update_status = tr("Pobieranie aktualizacji…")
+            self._submit("download_update", asyncio.to_thread(
+                download_update, self._download_info,
+                self.worker.update_progress.emit, self._update_cancel,
+            ))
+        if self._settings_window is not None:
+            self._settings_window.refresh_updates()
+
+    @Slot(int, int)
+    def _download_progress(self, received, total):
+        if self._closing or "download_update" not in self.pending:
+            return
+        self._update_status = tr(
+            "Pobieranie aktualizacji: {percent}%", percent=received * 100 // total,
+        )
+        if self._settings_window is not None:
+            self._settings_window.refresh_updates()
+
     def _result(self, tag, result):
         self.pending.discard(tag)
+        if tag == "launch_update":
+            self._quit()
+            return
+        if tag == "download_update":
+            if self._download_info == self.update_info:
+                self._update_path = result
+                self._update_status = tr(
+                    "Instalator jest gotowy. Kliknij „Zainstaluj i zamknij aplikację”."
+                )
+            else:
+                self._update_status = ""
+            if self._settings_window is not None:
+                self._settings_window.refresh_updates()
         if tag == "updates":
             if self._update_repository_at_request != self.settings.update_repository:
                 self.update_info = UpdateInfo()
@@ -1276,6 +1354,7 @@ class MainWindow(QMainWindow):
                     tr("Nie znaleziono Yamahy. Wpisz jej adres IP z menu Network → Information.")
                 )
         elif tag == "devices":
+            self._notice(tr("Znaleziono wyjścia dźwięku: {count}.", count=len(result)))
             self.audio_device.clear()
             self.audio_device.addItem(tr("Domyślne wyjście Windows"), None)
             for item in result:
@@ -1313,6 +1392,14 @@ class MainWindow(QMainWindow):
 
     def _failed(self, tag, text):
         self.pending.discard(tag)
+        if tag in {"download_update", "launch_update"}:
+            self._update_status = text
+            if tag == "launch_update":
+                self._update_path = None
+            if self._settings_window is not None:
+                self._settings_window.refresh_updates()
+            self._render()
+            return
         if tag == "updates":
             self.update_info = UpdateInfo("unreachable")
             self.update_button.setText(tr("Aktualizacje…"))
@@ -1365,7 +1452,9 @@ class MainWindow(QMainWindow):
         dialog.open()
 
     def _render(self):
-        busy = bool(self.pending - {"refresh", "discover", "devices", "windows_outputs", "updates"})
+        busy = bool(self.pending - {
+            "refresh", "discover", "devices", "windows_outputs", "updates", "download_update",
+        })
         connecting = "connect" in self.pending
         snapshot = self.snapshot
         usable = bool(snapshot) and not self._connection_failed and not connecting
@@ -1477,6 +1566,10 @@ class MainWindow(QMainWindow):
         self.audio_device.setEnabled(
             not self.streaming and not self.audio_connecting and not self.settings.auto_output
         )
+        self.devices_button.setEnabled("devices" not in self.pending)
+        self.devices_button.setText(
+            tr("Odczytywanie…") if "devices" in self.pending else tr("Odśwież wyjścia")
+        )
         self.routing_hint.setText(
             tr("Pozostał zapis poprzedniej trasy dźwięku. W Ustawieniach kliknij "
                "„Przywróć wyjście” albo wybierz wyjście ręcznie w Windows.")
@@ -1495,6 +1588,7 @@ class MainWindow(QMainWindow):
         )
         if self._settings_window is not None:
             self._settings_window.refresh_enabled()
+            self._settings_window.refresh_updates()
         self.devices_button.setEnabled(
             sys.platform == "win32"
             and "devices" not in self.pending
@@ -1510,6 +1604,7 @@ class MainWindow(QMainWindow):
         if self._closing:
             return
         self._closing = True
+        self._update_cancel.set()
         self.poll.stop()
         self.traffic_timer.stop()
         self.setEnabled(False)

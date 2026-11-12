@@ -11,19 +11,20 @@ oddzielnie opublikowane w [GitHub Releases](https://github.com/auditlog/musiccas
 
 ## Instalator aplikacji
 
-Aktualna wersja źródeł i lokalnego buildu to **0.2.2**. Gotowy instalator
+Aktualna wersja źródeł i lokalnego buildu to **0.2.3**. Gotowy instalator
 Windows x64 znajduje się w katalogu projektu:
 
-**`dist\installer\MusicCastBridge-0.2.2-Setup-x64.exe`**.
+**`dist\installer\MusicCastBridge-0.2.3-Setup-x64.exe`**.
 
 Dla projektu w `C:\code\musiccast` pełna ścieżka to
-`C:\code\musiccast\dist\installer\MusicCastBridge-0.2.2-Setup-x64.exe`.
+`C:\code\musiccast\dist\installer\MusicCastBridge-0.2.3-Setup-x64.exe`.
 Plik ma około 40 MB. Sprawdzono, że aplikacja i instalator mają w metadanych
-Windows **FileVersion 0.2.2.0** i **ProductVersion 0.2.2.0**, a pakiet zawiera
+Windows **FileVersion 0.2.3.0** i **ProductVersion 0.2.3.0**, a pakiet zawiera
 adres aktualizacji `auditlog/musiccast-windows-app`.
 
-Ta wersja zawiera wybór języka PL/EN, dokumenty w wybranym języku i wbudowane
-repozytorium aktualizacji. Po kolejnych zmianach źródeł przebuduj instalator
+Ta wersja zawiera poprawki startu AirPlay i wykrywania wyjść audio, większy bufor
+retransmisji oraz pobieranie i uruchamianie aktualizacji w aplikacji.
+Po kolejnych zmianach źródeł przebuduj instalator
 poleceniem `build-installer-windows.cmd`. Istniejący EXE nie zmienia się po edycji
 plików projektu.
 
@@ -143,13 +144,25 @@ Numer wersji ma jedno źródło: `__version__` w
 Pakiet Pythona, EXE i instalator korzystają z tej wartości. Build zapisuje
 Windows **FileVersion** i **ProductVersion**, po czym odczytuje je z gotowego
 EXE i porównuje z zadeklarowaną wersją. Wersja jest też w tytule okna i w
-ustawieniach. Obecna wersja źródeł to **0.2.2**.
+ustawieniach. Obecna wersja źródeł to **0.2.3**.
 
 Przy starcie program domyślnie sprawdza najnowsze stabilne **GitHub Release**,
 w tle i bez przerywania audio. Dostępna aktualizacja zmienia przycisk na
-**Nowa wersja!**. W zakładce Aktualizacje możesz otworzyć wydanie, pobrać
-instalator i zainstalować go po zakończeniu aplikacji przez Ctrl+Q. Sprawdzanie
-można wyłączyć. Brak internetu lub limit GitHuba jest pokazywany w tej zakładce.
+**Nowa wersja!**. Od wersji **0.2.3** w zakładce Aktualizacje kliknij
+**Pobierz aktualizację**, a po weryfikacji pliku **Zainstaluj i zamknij aplikację**.
+Pobieranie pokazuje postęp i nie przerywa audio. Instalacja zatrzymuje transmisję,
+przywraca poprzednie wyjście Windows, zamyka aplikację i otwiera dotychczasowy
+instalator ze wskazanym folderem i samą aplikacją (bez ponownej instalacji VB-CABLE).
+W ostatnim kroku kreatora możesz ponownie uruchomić aplikację. Ustawienia zostają
+zachowane. Funkcja instalacji działa w wersji EXE Windows x64.
+
+Instalator musi mieć nazwę `MusicCastBridge-X.Y.Z-Setup-x64.exe` i rozmiar oraz
+`digest` SHA-256 w danych zasobu GitHub Release. Brak tych danych pozostawia
+przycisk otwarcia strony wydania. Plik jest pobierany przez HTTPS z GitHuba i jego
+serwerów plików; rozmiar i suma są sprawdzane przed udostępnieniem instalacji
+oraz ponownie przed uruchomieniem. Błąd pobrania pozwala ponowić próbę.
+Sprawdzanie przy starcie można wyłączyć. Brak internetu lub limit GitHuba jest
+pokazywany w tej zakładce.
 
 Od **0.2.2** aplikacja ma wbudowane domyślne repozytorium
 **`auditlog/musiccast-windows-app`**. Działa ono również przy uruchamianiu
@@ -174,17 +187,17 @@ Sprawdzanie bez logowania wymaga publicznych wydań. Sam commit, push ani tag
 nie zastępują publikacji GitHub Release. Aby udostępnić nową wersję:
 
 1. Uruchom `build-installer-windows.cmd`. Dla bieżącej wersji wynikiem jest
-   `dist\installer\MusicCastBridge-0.2.2-Setup-x64.exe`.
-2. Opublikuj stabilny, publiczny GitHub Release z tagiem **v0.2.2** i dołącz
+   `dist\installer\MusicCastBridge-0.2.3-Setup-x64.exe`.
+2. Opublikuj stabilny, publiczny GitHub Release z tagiem **v0.2.3** i dołącz
    wygenerowany instalator.
 3. Przy publicznej dystrybucji dołącz źródła i informacje wymagane przez LGPL
    zgodnie z [instrukcją wydania](licenses/README.md).
 
-Przy kolejnym wydaniu zwiększ najpierw `__version__`, np. do `0.2.3`.
+Przy kolejnym wydaniu zwiększ najpierw `__version__`, np. do `0.2.4`.
 Tag wydania, wersja aplikacji i nazwa instalatora powinny mieć ten sam numer.
 
-Kontrola aktualizacji pobiera tylko opis wydania z `api.github.com`. Instalator
-jest pobierany przez użytkownika ze strony wydania. Więcej w [prywatności](PRIVACY.md).
+Samo sprawdzanie aktualizacji pobiera opis wydania z `api.github.com`. Pobranie
+instalatora wymaga kliknięcia. Więcej w [prywatności](PRIVACY.md).
 
 **`demo-windows.cmd`** pokazuje panel z przykładowymi danymi. Tryb demonstracyjny
 nie łączy się z fizycznym amplitunerem i nie wysyła dźwięku.
@@ -335,6 +348,11 @@ Co pięć sekund `stream_health` pokazuje również:
   `retransmitted_packets` oznacza przekazanie powtórzeń do UDP;
   `retransmit_unavailable` — brak żądanego pakietu w buforze w danym momencie;
   `retransmit_send_errors` — błąd wysłania powtórzenia.
+  Od 0.2.3 bufor retransmisji AirPlay 1 przechowuje 4096 pakietów (około 33 s
+  przy 44,1 kHz), bez zwiększania opóźnienia odtwarzania.
+  `max_retransmit_age_packets` pokazuje największy odstęp żądanej sekwencji
+  od ostatniej wysłanej. Pozwala rozpoznać spóźnione żądania; nie potwierdza
+  usunięcia strat sieciowych ani odtworzenia pakietów przez Yamahę.
   `retransmitted_bytes` liczy dane przekazane ponownie do UDP, a `buffered_ms`
   podaje przeliczoną długość kolejki źródła.
 

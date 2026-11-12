@@ -20,6 +20,7 @@ class Worker(QThread):
     failed = Signal(str, str)
     audio_state = Signal(str, str)
     airplay_secret = Signal(str, str, object)
+    update_progress = Signal(int, int)
 
     def __init__(self, parent=None):
         super().__init__(parent)

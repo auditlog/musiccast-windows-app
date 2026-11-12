@@ -19,10 +19,22 @@ from musiccast_bridge.audio import (
     LoopbackCapture,
     PCMStream,
     create_test_tone,
+    list_audio_devices,
 )
 
 
 class PCMTests(unittest.TestCase):
+    def test_decoder_probes_do_not_wait_for_live_audio_before_record(self):
+        pipe = PCMStream(48000, 2, gated=True)
+        with patch.object(pipe._condition, "wait", side_effect=AssertionError("paced probe")):
+            data = pipe.read(65536)
+        self.assertEqual(data[:4], b"RIFF")
+        self.assertEqual(data[44:], bytes(65536 - 44))
+        self.assertFalse(pipe.enabled)
+        self.assertEqual(pipe.inserted_silence_bytes, 0)
+        self.assertEqual(pipe.underflow_reads, 0)
+        pipe.close()
+
     def test_wav_header_and_pcm_are_valid(self):
         pipe = PCMStream(48000, 2)
         pcm = struct.pack("<hhhh", 100, -100, 200, -200)
@@ -178,6 +190,48 @@ class PCMTests(unittest.TestCase):
         self.assertEqual(consumed, [0])
         self.assertEqual(errors, [])
         self.assertEqual(output, [b""])
+
+
+class DeviceEnumerationTests(unittest.TestCase):
+    def test_global_list_includes_appended_loopbacks_and_excludes_microphones(self):
+        from unittest.mock import MagicMock
+
+        entries = [
+            dict(index=0, name="Microphone", maxInputChannels=2),
+            dict(index=1, name="Speakers", maxInputChannels=0),
+            dict(index=21, name="Speakers [Loopback]", isLoopbackDevice=True,
+                 maxInputChannels=2, defaultSampleRate=48000),
+            dict(index=22, name="CABLE Input [Loopback]", isLoopbackDevice=True,
+                 maxInputChannels=2, defaultSampleRate=44100),
+            dict(index=23, name="Inactive", isLoopbackDevice=True, maxInputChannels=0),
+        ]
+        manager = MagicMock()
+        manager.__enter__.return_value = manager
+        manager.get_device_count.return_value = len(entries)
+        manager.get_device_info_by_index.side_effect = entries
+        # Model the host API mapping that omitted appended loopbacks.
+        manager.get_loopback_device_info_generator.return_value = iter(())
+        with patch("musiccast_bridge.audio._pyaudio", return_value=SimpleNamespace(
+            PyAudio=lambda: manager,
+        )):
+            devices = list_audio_devices()
+        self.assertEqual([device.index for device in devices], [21, 22])
+        self.assertEqual([device.rate for device in devices], [48000, 44100])
+        manager.get_loopback_device_info_generator.assert_not_called()
+        manager.__exit__.assert_called_once()
+
+    def test_empty_list_and_native_errors_have_an_actionable_message(self):
+        from unittest.mock import MagicMock
+
+        for error in (None, OSError("WASAPI unavailable")):
+            manager = MagicMock()
+            manager.__enter__.return_value = manager
+            manager.get_device_count.return_value = 0
+            manager.get_device_count.side_effect = error
+            with patch("musiccast_bridge.audio._pyaudio", return_value=SimpleNamespace(
+                PyAudio=lambda manager=manager: manager,
+            )), self.assertRaisesRegex(AudioError, "WASAPI"):
+                list_audio_devices()
 
 
 class StreamingLifecycleTests(unittest.IsolatedAsyncioTestCase):

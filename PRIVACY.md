@@ -14,6 +14,13 @@ User-Agent. Zapytanie nie zawiera dźwięku, adresu Yamahy, poświadczeń AirPla
 ani raportu diagnostycznego. Sprawdzanie można wyłączyć w Ustawieniach →
 Aktualizacje. Ręczne sprawdzenie wykonuje to samo zapytanie.
 
+Kliknięcie „Pobierz aktualizację” pobiera instalator przez HTTPS z GitHuba i jego
+serwerów plików (`release-assets.githubusercontent.com` lub `objects.githubusercontent.com`).
+GitHub otrzymuje adres IP i wersję aplikacji. Plik trafia do podkatalogu `updates`
+w lokalnych danych aplikacji. Przed uruchomieniem aplikacja sprawdza rozmiar
+i SHA-256 z opisu wydania. Instalacja wymaga osobnego kliknięcia, zamyka aplikację
+i uruchamia jej instalator. Pobieranie i instalacja nie są wykonywane w tle automatycznie.
+
 Ustawienia, logi oraz zapis poprzedniej trasy audio są przechowywane lokalnie
 w `%LOCALAPPDATA%\MusicCastBridge`. Zapis obejmuje język, adres amplitunera,
 nazwę/identyfikator wyjścia dźwięku i preferencje. Hasła AirPlay i dane parowania
@@ -47,6 +54,14 @@ to read the selected repository's latest stable release. GitHub receives your
 IP address and the application version in the User-Agent header. Requests do
 not include audio, your Yamaha's address, AirPlay credentials, or diagnostics.
 Disable startup checks in Settings → Updates. Manual checks make the same request.
+
+Clicking “Download update” downloads the installer over HTTPS from GitHub and its
+file servers (`release-assets.githubusercontent.com` or `objects.githubusercontent.com`).
+GitHub receives your IP address and app version. The file is saved in the `updates`
+subdirectory of the app's local data. Before launching it, the app checks its size
+and SHA-256 against the release metadata. Installation requires a separate click,
+closes the app and runs its installer. Downloads and installations never start
+automatically in the background.
 
 Settings, logs, and the previous audio-route journal are stored locally in
 `%LOCALAPPDATA%\MusicCastBridge`. They include language, receiver address,

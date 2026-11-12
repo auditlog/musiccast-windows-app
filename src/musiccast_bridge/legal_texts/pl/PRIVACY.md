@@ -12,6 +12,13 @@ User-Agent. Zapytanie nie zawiera dźwięku, adresu Yamahy, poświadczeń AirPla
 ani raportu diagnostycznego. Sprawdzanie można wyłączyć w Ustawieniach →
 Aktualizacje. Ręczne sprawdzenie wykonuje to samo zapytanie.
 
+Kliknięcie „Pobierz aktualizację” pobiera instalator przez HTTPS z GitHuba i jego
+serwerów plików (release-assets.githubusercontent.com lub objects.githubusercontent.com).
+GitHub otrzymuje adres IP i wersję aplikacji. Plik trafia do podkatalogu updates
+w lokalnych danych aplikacji. Przed uruchomieniem aplikacja sprawdza rozmiar
+i SHA-256 z opisu wydania. Instalacja wymaga osobnego kliknięcia, zamyka aplikację
+i uruchamia jej instalator. Pobieranie i instalacja nie są wykonywane w tle automatycznie.
+
 Ustawienia, logi oraz zapis poprzedniej trasy audio są przechowywane lokalnie
 w %LOCALAPPDATA%\MusicCastBridge. Zapis obejmuje język, adres amplitunera,
 nazwę/identyfikator wyjścia dźwięku i preferencje. Hasła AirPlay i dane parowania

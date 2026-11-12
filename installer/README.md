@@ -15,7 +15,7 @@ PyInstaller, używa `build\VBCABLE_Driver_Pack46.zip` albo pobiera tę paczkę z
 sprawdza strukturę archiwum i kompiluje Inno Setup. Wynik dla bieżącej wersji:
 
 ```text
-dist\installer\MusicCastBridge-0.2.2-Setup-x64.exe
+dist\installer\MusicCastBridge-0.2.3-Setup-x64.exe
 ```
 
 Wersja pochodzi z `__version__` w `src/musiccast_bridge/__init__.py`.

@@ -115,6 +115,8 @@ _FIELDS = {
     "delivery_confirmed",
     "retransmitted_bytes",
     "buffered_ms",
+    "packets",
+    "max_retransmit_age_packets",
 }
 
 
@@ -166,6 +168,7 @@ class AirPlayDiagnostics:
                     "ignored_udp_packets",
                     "max_send_gap_ms",
                     "send_gaps_over_50ms",
+                    "max_retransmit_age_packets",
                 ),
                 0,
             )

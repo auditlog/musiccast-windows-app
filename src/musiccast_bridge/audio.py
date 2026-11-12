@@ -178,6 +178,11 @@ class PCMStream(io.BufferedIOBase):
             # WAV parsers often request only a few header bytes. Return immediately.
             if not needed:
                 return header
+            # File probes and decoder setup run before RECORD. Pacing their reads
+            # as live audio adds seconds to startup while the capture gate is shut.
+            # Never consume captured samples here; enable() starts the live clock.
+            if not self._enabled:
+                return header + bytes(needed)
             # Capture callbacks can stop arriving while Windows is silent. Supply paced
             # silence, keeping the RAOP session alive instead of blocking forever.
             deadline = time.monotonic() + min(1.0, needed / self.bytes_per_second)
@@ -283,17 +288,33 @@ def _pyaudio():
 
 def list_audio_devices() -> list[AudioDevice]:
     pyaudio = _pyaudio()
-    with pyaudio.PyAudio() as manager:
-        return [
-            AudioDevice(
-                int(item["index"]),
-                str(item["name"]),
-                int(item["defaultSampleRate"]),
-                int(item["maxInputChannels"]),
-            )
-            for item in manager.get_loopback_device_info_generator()
-            if int(item.get("maxInputChannels", 0)) > 0
-        ]
+    try:
+        with pyaudio.PyAudio() as manager:
+            # Loopback endpoints are appended to PortAudio's global device list.
+            # Some versions omit them from the host API's device-index mapping.
+            devices = [
+                AudioDevice(
+                    int(item["index"]),
+                    str(item["name"]),
+                    int(item["defaultSampleRate"]),
+                    int(item["maxInputChannels"]),
+                )
+                for index in range(manager.get_device_count())
+                if (item := manager.get_device_info_by_index(index)).get("isLoopbackDevice")
+                and int(item.get("maxInputChannels", 0)) > 0
+            ]
+    except (OSError, ValueError) as error:
+        log.exception("WASAPI output enumeration failed")
+        raise AudioError(tr(
+            "Nie udało się odczytać wyjść WASAPI. Sprawdź urządzenia w ustawieniach "
+            "dźwięku Windows i ponownie kliknij „Odśwież wyjścia”."
+        )) from error
+    if not devices:
+        raise AudioError(tr(
+            "Windows nie udostępnił wyjść WASAPI loopback. Włącz wyjście w ustawieniach "
+            "dźwięku Windows, a następnie kliknij „Odśwież wyjścia”."
+        ))
+    return devices
 
 
 class LoopbackCapture:

@@ -11,6 +11,14 @@ IP address and the application version in the User-Agent header. Requests do
 not include audio, your Yamaha's address, AirPlay credentials, or diagnostics.
 Disable startup checks in Settings → Updates. Manual checks make the same request.
 
+Clicking “Download update” downloads the installer over HTTPS from GitHub and its
+file servers (release-assets.githubusercontent.com or objects.githubusercontent.com).
+GitHub receives your IP address and app version. The file is saved in the updates
+subdirectory of the app's local data. Before launching it, the app checks its size
+and SHA-256 against the release metadata. Installation requires a separate click,
+closes the app and runs its installer. Downloads and installations never start
+automatically in the background.
+
 Settings, logs, and the previous audio-route journal are stored locally in
 %LOCALAPPDATA%\MusicCastBridge. They include language, receiver address,
 audio device name/identifier, and preferences. AirPlay passwords and pairing

@@ -32,7 +32,7 @@ where = ["src"]
 version = {attr = "musiccast_bridge.__version__"}
 
 [tool.setuptools.package-data]
-musiccast_bridge = ["en.json", "windows_output.ps1", "legal_texts/pl/*", "legal_texts/en/*"]
+musiccast_bridge = ["en.json", "*.ps1", "legal_texts/pl/*", "legal_texts/en/*"]
 
 [tool.setuptools.data-files]
 "share/musiccast-bridge" = ["LICENSE", "TERMS.md", "PRIVACY.md", "THIRD_PARTY_NOTICES.md"]

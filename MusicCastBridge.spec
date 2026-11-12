@@ -27,6 +27,7 @@ datas += [
     (str(build_info), "musiccast_bridge"),
     ("src/musiccast_bridge/en.json", "musiccast_bridge"),
     ("src/musiccast_bridge/windows_output.ps1", "musiccast_bridge"),
+    ("src/musiccast_bridge/update_installer.ps1", "musiccast_bridge"),
     ("LICENSE", "legal"),
     ("TERMS.md", "legal"),
     ("PRIVACY.md", "legal"),

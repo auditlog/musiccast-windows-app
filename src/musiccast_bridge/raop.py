@@ -8,6 +8,8 @@ import time
 from .diagnostics import AirPlayDiagnostics
 from .i18n import tr
 
+_RETRANSMIT_PACKETS = 4096
+
 
 def configure_airplay(stream, protocol, trace: AirPlayDiagnostics, minimal=False):
     get_stream = getattr(stream, "get", None)
@@ -124,6 +126,14 @@ def configure_airplay(stream, protocol, trace: AirPlayDiagnostics, minimal=False
             )
             _observe_udp(client.timing_server, trace, rtsp.connection.remote_ip, timing=True)
             _observe_udp(client.control_client, trace, rtsp.connection.remote_ip)
+            if legacy and hasattr(client, "_packet_backlog"):
+                from pyatv.protocols.raop.fifo import PacketFifo
+
+                # Retain ~33 s at 44.1 kHz, without adding playback latency.
+                # Share the new FIFO with the sender and control listener.
+                client._packet_backlog = PacketFifo(_RETRANSMIT_PACKETS)
+                client.control_client.packet_backlog = client._packet_backlog
+                trace.emit("retransmit_buffer", packets=_RETRANSMIT_PACKETS)
             _observe_retransmissions(client.control_client, trace, rtsp.connection.remote_ip)
             await original_protocol_setup(*args, **kwargs)
             trace.emit(
@@ -298,6 +308,11 @@ def _observe_retransmissions(listener, trace, remote_ip):
             return
         backlog = listener.packet_backlog
         start, count = request.lost_seqno, request.lost_packets
+        if backlog and count:
+            latest = next(reversed(tuple(backlog)))
+            age = (latest - start) & 0xFFFF
+            if age < 0x8000:
+                trace.maximum("max_retransmit_age_packets", age)
         # Typical requests are one or a few packets. For a large range inspect
         # only the bounded FIFO instead of iterating up to 65535 sequence numbers.
         if count <= len(backlog):

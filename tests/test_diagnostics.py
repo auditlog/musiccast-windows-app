@@ -275,6 +275,7 @@ class ProtocolDiagnosticTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(self.trace.counters()["retransmit_unavailable"], 1)
         self.assertEqual(self.trace.counters()["requested_packets"], 4)
+        self.assertEqual(self.trace.counters()["max_retransmit_age_packets"], 44)
         listener.datagram_received(request, ("127.0.0.3", 9001))
         listener.datagram_received(request[:6], peer)
         self.assertEqual(len(sent), 3)
@@ -291,6 +292,37 @@ class ProtocolDiagnosticTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(counters["retransmitted_packets"], 3)
         self.assertEqual(counters["retransmit_send_errors"], 4)
         self.assertEqual(counters["retransmit_unavailable"], 1 + 65535 - 4)
+
+    async def test_larger_retransmit_fifo_is_shared_by_sender_and_control_listener(self):
+        module = ModuleType("pyatv.protocols.raop.fifo")
+
+        class Fifo(dict):
+            def __init__(self, limit):
+                super().__init__()
+                self.limit = limit
+
+        module.PacketFifo = Fifo
+        self.enterContext(patch.dict("sys.modules", {module.__name__: module}))
+        self.client._packet_backlog = Fifo(1000)
+        listener = self.client.control_client
+        listener.packet_backlog = self.client._packet_backlog
+        sent = []
+        listener.transport = SimpleNamespace(sendto=lambda *args: sent.append(args))
+        listener._retransmit_lost_packets = lambda *args: None
+        configure_airplay(self.facade, "raop", self.trace)
+        await self.manager.setup(self.service)
+        await self.protocol.setup(6001, 6002)
+        self.assertEqual(self.client._packet_backlog.limit, 4096)
+        self.assertIs(listener.packet_backlog, self.client._packet_backlog)
+        # A requested packet 1500 packets behind would be absent from the old FIFO.
+        for sequence in range(1600):
+            self.client._packet_backlog[sequence] = struct.pack("!BBH", 0x80, 0x60, sequence)
+        listener._retransmit_lost_packets(
+            SimpleNamespace(lost_seqno=99, lost_packets=1), ("127.0.0.2", 9001)
+        )
+        self.assertEqual(self.trace.counters()["retransmitted_packets"], 1)
+        self.assertEqual(self.trace.counters()["max_retransmit_age_packets"], 1500)
+        self.assertEqual(len(sent), 1)
 
     async def test_send_gap_measurement_does_not_change_packet_data(self):
         configure_airplay(self.facade, "raop", self.trace)

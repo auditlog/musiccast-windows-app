@@ -5,6 +5,8 @@ import sys
 import time
 import unittest
 from dataclasses import replace
+from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from musiccast_bridge.audio import AudioDevice
@@ -141,6 +143,73 @@ class WindowTests(unittest.TestCase):
         self.window._failed("updates", "network failure")
         self.assertEqual(self.window.notice.toolTip(), "Receiver message")
         self.assertEqual(self.window.update_info.state, "unreachable")
+
+    def test_update_download_does_not_close_app_and_install_waits_for_helper(self):
+        info = UpdateInfo(
+            "available", "owner/musiccast", "0.3.0", "https://github.com/release",
+            "https://github.com/installer", "a" * 64, 100,
+        )
+        self.window._result("updates", info)
+        self.window._show_updates()
+        dialog = self.window._settings_window
+        submitted = []
+
+        def submit(tag, coroutine):
+            submitted.append(tag)
+            coroutine.close()
+            self.window.pending.add(tag)
+
+        with (
+            patch("musiccast_bridge.ui.sys", SimpleNamespace(platform="win32", frozen=True)),
+            patch.object(self.window, "_submit", side_effect=submit),
+            patch.object(self.window, "_quit") as quit_app,
+        ):
+            dialog.refresh_updates()
+            self.assertTrue(dialog.update_install.isEnabled())
+            dialog.update_install.click()
+            self.assertEqual(submitted, ["download_update"])
+            self.assertFalse(dialog.update_install.isEnabled())
+            quit_app.assert_not_called()
+            self.window._download_progress(50, 100)
+            self.assertIn("50%", dialog.update_status.text())
+            self.window._result("download_update", Path("installer.exe"))
+            self.assertTrue(dialog.update_install.isEnabled())
+            self.assertIn("Zainstaluj", dialog.update_install.text())
+            quit_app.assert_not_called()
+            dialog.update_install.click()
+            self.assertEqual(submitted, ["download_update", "launch_update"])
+            quit_app.assert_not_called()
+            self.window._result("launch_update", None)
+            quit_app.assert_called_once()
+
+    def test_update_download_failure_preserves_receiver_notice_and_allows_retry(self):
+        self.window._show_updates()
+        self.window._notice("Receiver message")
+        self.window.pending.add("download_update")
+        self.window._failed("download_update", "Download failed")
+        self.assertNotIn("download_update", self.window.pending)
+        self.assertEqual(self.window.notice.toolTip(), "Receiver message")
+        self.assertEqual(self.window._settings_window.update_status.text(), "Download failed")
+        self.window._update_path = Path("installer.exe")
+        self.window._failed("launch_update", "Installer changed")
+        self.assertIsNone(self.window._update_path)
+        self.assertEqual(self.window._settings_window.update_install.text(), "Pobierz aktualizację")
+
+    def test_refresh_outputs_reports_pending_success_and_failure(self):
+        def submit(tag, coroutine):
+            coroutine.close()
+            self.window.pending.add(tag)
+            self.window._render()
+
+        with patch.object(self.window, "_submit", side_effect=submit):
+            self.window._devices()
+        self.assertFalse(self.window.devices_button.isEnabled())
+        self.window._result("devices", [AudioDevice(21, "CABLE Input", 48000, 2)])
+        self.assertTrue(self.window.devices_button.isEnabled())
+        self.assertEqual(self.window.audio_device.count(), 2)
+        self.assertEqual(self.window.audio_device.itemData(1), 21)
+        self.window._failed("devices", "WASAPI unavailable")
+        self.assertIn("WASAPI", self.window.notice.toolTip())
 
     def test_english_main_window_and_settings_use_translated_controls(self):
         self.assertEqual(self.window.connect_button.text(), "Connect")

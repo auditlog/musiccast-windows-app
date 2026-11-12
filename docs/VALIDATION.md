@@ -1,5 +1,78 @@
 # Weryfikacja MusicCast Bridge
 
+## Gotowy build Windows 0.2.3 — 12 listopada 2026
+
+- Użytkownik zbudował aplikację i instalator bezpośrednio w Windows.
+  Lokalnie odczytano zasoby PE: oba pliki mają FileVersion i ProductVersion
+  **0.2.3.0**. Instalator ma **39 963 375 bajtów**, EXE **7 882 216 bajtów**.
+- SHA-256 instalatora: `a2a4699688a750a5b44b9dddf3072bba72c93a11cfce369dd9039a8268eefd37`.
+  SHA-256 EXE: `85f42ef4318644cffa1e9810b5d603310ee0f6fbda1ca9f95b1343b411d7e597`.
+- Odczytano archiwum PYZ bezpośrednio z EXE. Wszystkie 22 dołączone moduły
+  `musiccast_bridge` odpowiadają skompilowanym aktualnym źródłom; przy porównaniu
+  pominięto wyłącznie różnice ścieżek plików kodu.
+- Pomocnik aktualizacji, pomocnik Core Audio, katalog tłumaczeń i obie wersje
+  dokumentu prywatności odpowiadają źródłom bajt po bajcie. Pakiet zawiera
+  `third-party-licenses/INDEX.txt` i `DEPENDENCIES.json` oraz metadane wersji
+  z repozytorium `auditlog/musiccast-windows-app`.
+- Weryfikacja plików nie uruchamiała aplikacji ani instalatora. W tej sesji
+  nadal nie wykonano odsłuchu na Yamasze ani ręcznej próby aktualizacji.
+- Przed publikacją ponowiono lokalny zestaw: 158 testów, 133 zaliczone i 25
+  pominiętych; Ruff i kontrola diffu przeszły. JEV potwierdził zgodność modułów,
+  sumę instalatora i wynik testów. Ocenę wersji PE oznaczył jako `unsupported`;
+  bezpośredni odczyt czterech liczb FileVersion i ProductVersion z obu plików
+  ponownie zwrócił `0.2.3.0`. To fałszywy alarm JEV. Przegląd zmian zwrócił
+  `escalate` (`safe_to_apply=0.43`) z powodu niskiej pewności i luk testów;
+  ograniczenia prób natywnych pozostają opisane powyżej.
+
+## Poprawki startu, wyjść i aktualizacja z aplikacji 0.2.3 — 12 listopada 2026
+
+- Zmieniono źródła na 0.2.3. Nie zbudowano nowego EXE ani instalatora Windows;
+  istniejący lokalny instalator 0.2.2 nie zawiera tych zmian.
+- W dostarczonym raporcie między `timing_probe_sent` i obsługą głośności minęło
+  11,516 s, bez zapytania RTSP w tym okresie. Odczyty bramkowanego źródła WAV
+  czekały na tempo audio przed RECORD. Teraz zwracają ciszę bez oczekiwania;
+  test blokuje wszelkie oczekiwanie podczas odczytu 64 KiB przed otwarciem bramki.
+  Po jej otwarciu pozostaje dotychczasowe tempo i liczenie niedoborów.
+- Lista wyjść skanuje globalne indeksy PortAudio, z filtrem `isLoopbackDevice`,
+  zamiast korzystać z mapowania indeksów host API. Test modeluje pominięte
+  urządzenia loopback dopisane na końcu listy i odrzuca mikrofony. Pusta lista
+  oraz błąd WASAPI dają komunikat z możliwością ponownego odczytu. UI pokazuje
+  oczekiwanie i wynik. Naprawa na konkretnym urządzeniu Windows nie jest potwierdzona.
+- Raport wykazuje 1524 żądane powtórzenia, 1483 przekazane ponownie do UDP i 41
+  brakujących w buforze; bez dodanej ciszy, niedoborów i przerw wysyłania >50 ms.
+  Bufor AirPlay 1 zwiększono z 1000 do 4096 pakietów, czyli z około 8 do 33 s
+  przy 44,1 kHz, bez zmiany opóźnienia odtwarzania. Test potwierdza wspólny FIFO
+  dla nadawcy i obsługi powtórzeń oraz obsługę żądania 1500 pakietów wstecz.
+  Dodano `max_retransmit_age_packets`, także z testem zawijania sekwencji.
+  Przyczyna słyszalnych zaników i skuteczność powtórzeń wymagają rzeczywistego odsłuchu.
+- Aktualizacja ma osobne akcje pobrania i instalacji. Wymaga właściwej nazwy
+  zasobu, rozmiaru i digestu SHA-256 z GitHub API. Testy sprawdzają integralność,
+  ucięcie/nadmiar danych, anulowanie i błąd sieci z usunięciem częściowych plików,
+  dozwolone hosty HTTPS, brak uruchamiania przy pobieraniu oraz ponowne sprawdzenie
+  sumy przy instalacji. Postęp pobierania nie blokuje sterowania amplitunerem.
+  Pomocnik PowerShell potwierdza gotowość, czeka na zakończenie procesu i otwiera
+  instalator w obecnym katalogu, z samym składnikiem aplikacji. Zwykłe zamknięcie
+  aplikacji zatrzymuje audio i przywraca trasę. Kreator zachowuje możliwość
+  ponownego uruchomienia aplikacji. Nowy test natywny używa fikcyjnego instalatora
+  CMD i sprawdza czekanie na proces oraz argumenty; tutaj jest pominięty.
+- `PYTHONPATH=src python3 scripts/check.py --sandbox`: **158 testów, 133 zaliczone,
+  25 pominiętych** (23 Qt, Core Audio i przekazanie instalacji na Windows).
+  Ruff i aktualność dokumentów PL/EN przeszły. Zbudowano pakiet wheel w `/tmp`
+  i sprawdzono obecność obu pomocników PowerShell, katalogu tłumaczeń i wersji 0.2.3.
+  Pakiet wheel nie jest buildem EXE ani instalatora.
+- JEV wskazał obecny instalator zamiast podmiany plików aplikacji oraz większy
+  bufor z diagnostyką zamiast restartów na podstawie liczby powtórzeń. Potrzebę
+  aktualizacji i poprawy audio podał użytkownik; priorytety zachowania ustawień,
+  przywracania trasy, ograniczonej pamięci i małej zmiany protokołu ustaliłem
+  podczas implementacji. Przegląd patcha zwrócił `escalate`, `safe_to_apply=0.25`,
+  `test_gap=1.45` z pewnością 0.25. Uzupełniono niezależne testy błędu sieci
+  i test natywny przekazania instalacji; ten drugi pozostaje niewykonany.
+- Próba Windows Python zwraca `UtilBindVsockAnyPort: socket failed 1`; PyPI nie
+  jest osiągalne. Odczyty GitHub Release przez API i przeglądarkę nie powiodły się.
+  Nie potwierdzono, czy publiczny stabilny Release v0.2.3 już istnieje.
+  Przed wydaniem wymagane są build i testy Windows, odsłuch oraz materiały
+  z `licenses/README.md`. Ten zapis nie deklaruje weryfikacji sprzętowej.
+
 ## Gotowy build Windows 0.2.2 — 12 listopada 2026
 
 - Instalator `dist/installer/MusicCastBridge-0.2.2-Setup-x64.exe` istnieje
